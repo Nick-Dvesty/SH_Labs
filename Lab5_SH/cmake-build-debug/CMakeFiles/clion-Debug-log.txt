@@ -1,0 +1,4 @@
+/usr/lib/clion-2024.1.4/bin/cmake/linux/x64/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/usr/lib/clion-2024.1.4/bin/ninja/linux/x64/ninja -G Ninja -S /home/modnick/Documents/ProgramProjects/CLionProjects/COtherProject/Lab5_SH -B /home/modnick/Documents/ProgramProjects/CLionProjects/COtherProject/Lab5_SH/cmake-build-debug
+-- Configuring done (0.0s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/modnick/Documents/ProgramProjects/CLionProjects/COtherProject/Lab5_SH/cmake-build-debug

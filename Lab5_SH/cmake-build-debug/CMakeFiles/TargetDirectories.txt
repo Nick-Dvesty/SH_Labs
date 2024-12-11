@@ -1,0 +1,3 @@
+/home/modnick/Documents/ProgramProjects/CLionProjects/COtherProject/Lab5_SH/cmake-build-debug/CMakeFiles/Lab5_SH.dir
+/home/modnick/Documents/ProgramProjects/CLionProjects/COtherProject/Lab5_SH/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/modnick/Documents/ProgramProjects/CLionProjects/COtherProject/Lab5_SH/cmake-build-debug/CMakeFiles/rebuild_cache.dir
