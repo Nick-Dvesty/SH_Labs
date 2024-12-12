@@ -3,8 +3,6 @@
 #include <string>
 #include <vector>
 #include <regex>
-#include <filesystem>
-#include <stack>
 #include <set>
 #include <mutex>
 #include <thread>
@@ -23,6 +21,8 @@ private:
     static vector<string> extractLinks(const string& html);
     static bool copyFile(const std::string& source, const std::string& destination);
     static void crawlPageRec(const std::string&, set<string>*, int*, int*, int*, int *, mutex*);
+    static vector<string> findNotUsing(vector<string> &findLinks, set<string> &allLinks);
+    static int availableThread(int &countSameTimeThread, int &usingCountThread, size_t notUsingSize);
 public:
     static void crawlPage(const string& url, int countSameTimeThread);
 };
@@ -57,43 +57,19 @@ void crawl::crawlPageRec(const string& url, set<string> *allLinks, int *resultCo
     copyFile(file_path, "copy_dir/" + file_path);
     string html_content = readFile(file_path);
     vector<string> links = extractLinks(html_content);
-    vector<string> notUsing;
-    int j = 0;
     mtx->lock();
-    for (auto & findPath : links) {
-        bool used = false;
-        for (auto & path : *allLinks) {
-            if (path == findPath){
-                used = true;
-                break;
-            }
-        }
-        if (!used) {
-            notUsing.push_back(findPath);
-            allLinks->insert(findPath);
-        }
-    }
-    if ((*countSameTimeThread) - (*usingCountThread) > 0) {
-        if ((*countSameTimeThread) - (*usingCountThread) > (int)notUsing.size()) {
-            j = 0;
-            (*usingCountThread) += notUsing.size();
-        } else {
-            j = notUsing.size() - ((*countSameTimeThread) - (*usingCountThread));
-            (*usingCountThread) = (*countSameTimeThread);
-        }
-    } else {
-        j = notUsing.size();
-    }
+    vector<string> notUsing = findNotUsing(links, *allLinks);
+    auto countFileBaseThread = availableThread(*countSameTimeThread, *usingCountThread, notUsing.size());
     mtx->unlock();
     thread l[notUsing.size()];
-    if (notUsing.size() > j) {
-        for (int i = 0; i < notUsing.size() - j; i++) {
+    if (notUsing.size() > countFileBaseThread) {
+        for (int i = 0; i < notUsing.size() - countFileBaseThread; i++) {
             mtx->lock();
-#ifdef DEBUG
+            #ifdef DEBUG
             string output = std::to_string(*resultCountThread) + " " + std::to_string(*usingCountThread) +
                             ": create thread: " + notUsing[i] + "\n";
             std::cout<<output;
-#endif
+            #endif
             (*resultCountThread)++;
             mtx->unlock();
             l[i] = thread(crawlPageRec, notUsing[i], allLinks, resultCountPage, resultCountThread,
@@ -101,14 +77,14 @@ void crawl::crawlPageRec(const string& url, set<string> *allLinks, int *resultCo
         }
     }
     if (notUsing.size() > 0) {
-        int i = (int)notUsing.size() - j > 0 ? notUsing.size() - j : 0;
+        int i = (int)notUsing.size() - countFileBaseThread > 0 ? notUsing.size() - countFileBaseThread : 0;
         for (; i < notUsing.size(); ++i) {
             crawlPageRec(notUsing[i], allLinks, resultCountPage,
                          resultCountThread, countSameTimeThread, usingCountThread, mtx);
         }
     }
-    if (notUsing.size() > j) {
-        for (int i = 0; i < notUsing.size() - j; ++i) {
+    if (notUsing.size() > countFileBaseThread) {
+        for (int i = 0; i < notUsing.size() - countFileBaseThread; ++i) {
             l[i].join();
             mtx->lock();
             (*usingCountThread)--;
@@ -148,8 +124,37 @@ bool crawl::copyFile(const std::string& source, const std::string& destination) 
 
     // Копирование содержимого исходного файла в файл назначения
     dest << src.rdbuf();
-
     return true;
+}
+vector<string> crawl::findNotUsing(vector<std::string> &findLinks, set<std::string> &allLinks) {
+    vector<string> notUsing;
+    for (auto & findPath : findLinks) {
+        bool used = false;
+        for (auto & path : allLinks) {
+            if (path == findPath){
+                used = true;
+                break;
+            }
+        }
+        if (!used) {
+            notUsing.push_back(findPath);
+            allLinks.insert(findPath);
+        }
+    }
+    return notUsing;
+}
+int crawl::availableThread(int &countSameTimeThread, int &usingCountThread, size_t notUsingSize) {
+    if (countSameTimeThread - usingCountThread > 0) {
+        if (countSameTimeThread - usingCountThread > notUsingSize) {
+            usingCountThread += notUsingSize;
+            return 0;
+        } else {
+            usingCountThread = countSameTimeThread;
+            return notUsingSize - (countSameTimeThread - usingCountThread);
+        }
+    } else {
+        return notUsingSize;
+    }
 }
 
 
