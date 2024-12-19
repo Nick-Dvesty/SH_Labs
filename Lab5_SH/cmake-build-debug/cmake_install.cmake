@@ -1,4 +1,4 @@
-# Install script for directory: /home/modnick/Documents/ProgramProjects/CLionProjects/COtherProject/Lab5_SH
+# Install script for directory: /home/modnick/Documents/ProgramProjects/CLionProjects/SH_Labs/Lab5_SH
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -50,5 +50,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/modnick/Documents/ProgramProjects/CLionProjects/COtherProject/Lab5_SH/cmake-build-debug/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/modnick/Documents/ProgramProjects/CLionProjects/SH_Labs/Lab5_SH/cmake-build-debug/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

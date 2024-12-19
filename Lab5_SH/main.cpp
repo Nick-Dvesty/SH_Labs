@@ -8,6 +8,7 @@
 #include <thread>
 #include <list>
 #include <chrono>
+#include <curl/curl.h>
 
 #define DEBUG
 //#undef DEBUG
@@ -17,9 +18,16 @@ using namespace std;
 
 class crawl{
 private:
+    static string readProtocol(const string& filePath);
     static string readFile(const string& filePath);
-    static vector<string> extractLinks(const string& html);
+    static string readHttp(const string& filePath);
+
+    static bool copyProtocol(const std::string& source, const std::string& destination);
     static bool copyFile(const std::string& source, const std::string& destination);
+    static bool copyHttps(const std::string& source, const std::string& destination);
+
+    static vector<string> extractLinks(const string& html);
+
     static void crawlPageRec(const std::string&, set<string>*, int*, int*, int*, int *, mutex*);
     static vector<string> findNotUsing(vector<string> &findLinks, set<string> &allLinks);
     static int availableThread(int &countSameTimeThread, int &usingCountThread, size_t notUsingSize);
@@ -54,8 +62,8 @@ void crawl::crawlPageRec(const string& url, set<string> *allLinks, int *resultCo
     (*resultCountPage)++;
     mtx->unlock();
     string file_path = url.substr(7);
-    copyFile(file_path, "copy_dir/" + file_path);
-    string html_content = readFile(file_path);
+    copyProtocol(file_path, "copy_dir/" + file_path);
+    string html_content = readProtocol(file_path);
     vector<string> links = extractLinks(html_content);
     mtx->lock();
     vector<string> notUsing = findNotUsing(links, *allLinks);
@@ -115,14 +123,11 @@ bool crawl::copyFile(const std::string& source, const std::string& destination) 
         std::cerr << "Ошибка открытия исходного файла: " << source << std::endl;
         return false;
     }
-
     std::ofstream dest(destination, std::ios::binary);  // Открытие файла назначения в бинарном режиме
     if (!dest) {
         std::cerr << "Ошибка открытия файла назначения: " << destination << std::endl;
         return false;
     }
-
-    // Копирование содержимого исходного файла в файл назначения
     dest << src.rdbuf();
     return true;
 }
