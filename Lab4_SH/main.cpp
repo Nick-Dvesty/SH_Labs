@@ -66,6 +66,7 @@ public:
     static NFAL unification(NFAL &automatLeft, NFAL &automatRight);
     static NFAL concatenation(NFAL &automat_from, NFAL &automat_to);
     void print();
+    ~NFAL();
 private:
     int* start_state;
     vector<int*> states;
@@ -74,7 +75,6 @@ private:
 
     int* retAddressState(int state);
     set<int*> findAchievable(int* state);
-private:
     void findAchievableRec(int* state, set<int*> &ans);
     void mergeConflict(NFAL &other);
     void mergeNfal(NFAL &other);
@@ -387,6 +387,11 @@ void NFAL::clear() {
     accept_states.clear();
     transitions.clear();
 }
+NFAL::~NFAL() {
+    for (auto & st : states) {
+        delete st;
+    }
+}
 
 template<typename T>
 PostfixConverter<T>::PostfixConverter(vector<tuple<char, int, T(*)(T&, T&)>> &&priorsBi, vector<tuple<char, int, T(*)(T&)>> &&priorsUn, T(*converter)(char)) :
@@ -405,7 +410,7 @@ string PostfixConverter<T>::GetStringNumber(std::string expr, int &pos) {
     string strNumber;
     for (; pos < expr.length(); pos++) {
         char num = expr[pos];
-        if (std::isalpha(num)) {
+        if (std::isalpha(num) || std::isdigit(num)) {
             strNumber += num;
         } else {
             pos--;
@@ -465,8 +470,6 @@ string PostfixConverter<T>::ToPostfix(string &infixExpr) {
 template<typename T>
 T  PostfixConverter<T>::calc(string postfixExpr) {
     stack<T> locals;
-    int counter = 0;
-    //	Проходим по строке
     for (int i = 0; i < postfixExpr.length(); i++) {
         char c = postfixExpr[i];
         if (std::isdigit(c) || std::isalpha(c)) {
@@ -474,30 +477,17 @@ T  PostfixConverter<T>::calc(string postfixExpr) {
             locals.push(std::move(elem));
         } else if (operationPriorityUn.find(c) != operationPriorityUn.end() ||
                    operationPriorityBi.find(c) != operationPriorityBi.end()) {
-            counter += 1;
             if (operationPriorityUn.find(c) != operationPriorityUn.end()) {
-                //	Проверяем, пуст ли стек: если да - задаём нулевое значение,
-                //	еси нет - выталкиваем из стека значение
                 T last = std::move(locals.top());
                 locals.pop();
-                //	Получаем результат операции и заносим в стек
                 locals.push(executeUn(c,last));
-                //	Отчитываемся пользователю о проделанной работе
-                //Console.WriteLine($"{counter}) {c}{last} = {locals.Peek()}");
-                //	Указываем, что нужно перейти к следующей итерации цикла
-                //	 для того, чтобы пропустить остальной код
-                continue;
+            } else {
+                T second = std::move(locals.top());
+                locals.pop();
+                T first = std::move(locals.top());
+                locals.pop();
+                locals.push(executeBi(c, first, second));
             }
-
-            //	Получаем значения из стека в обратном порядке
-            T second = std::move(locals.top());
-            locals.pop();
-            T first = std::move(locals.top());
-            locals.pop();
-            //	Получаем результат операции и заносим в стек
-            locals.push(executeBi(c, first, second));
-            //	Отчитываемся пользователю о проделанной работе
-            //Console.WriteLine($"{counter}) {first} {c} {second} = {locals.Peek()}");
         }
     }
     return std::move(locals.top());
